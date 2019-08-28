@@ -1,0 +1,61 @@
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: kibana
+  namespace: es-bak
+  labels:
+    component: elasticsearch
+    role: kibana
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        component: elasticsearch
+        role: kibana
+    spec:
+      nodeSelector: 
+        node: controller
+      containers:
+      - name: es-kibana
+        image: registry.yingzi.com:8500/library/kibana/kibana:6.4.2.3
+        env:
+        - name: ELASTICSEARCH_URL
+          value: "http://elasticsearch:9200"
+        - name: ELASTICSEARCH_USERNAME
+          value: "elastic"
+        - name: ELASTICSEARCH_PASSWORD
+          value: "elastic"
+        resources:
+          limits:
+            cpu: 2
+        ports:
+        - containerPort: 5601
+          name: http
+        volumeMounts:
+        - name: localtime
+          mountPath: /etc/localtime
+      volumes:
+        - name: localtime
+          hostPath:
+            path: /etc/localtime
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kibana
+  namespace: es-bak
+  labels:
+    component: elasticsearch
+    role: kibana
+spec:
+  selector:
+    component: elasticsearch
+    role: kibana
+  type: NodePort
+  ports:
+  - name: http
+    port: 80
+    targetPort: 5601
+    protocol: TCP
+    nodePort: 32101
